@@ -4,9 +4,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import tensorflow_datasets as tfds
-from keras.layers import InputLayer, Conv2D, MaxPool2D, Flatten, Dense, BatchNormalization
-from keras.optimizers import Adam
-from keras.losses import BinaryCrossentropy
 
 dataset, dataset_info = tfds.load('malaria', with_info=True,
                                   as_supervised=True, 
@@ -28,23 +25,7 @@ TEST_RATIO = 0.1
 IM_SIZE = 224
 
 
-model = tf.keras.Sequential()
-model.add(InputLayer(input_shape=(IM_SIZE, IM_SIZE,3)))
-model.add(Conv2D(filters=6, kernel_size=5, strides=1, padding='valid', activation='relu'))
-model.add(BatchNormalization())
-model.add(MaxPool2D(pool_size=2, strides=2))
-model.add(Conv2D(filters=16, kernel_size=5, strides=1, padding='valid', activation='relu'))
-model.add(BatchNormalization())
-model.add(MaxPool2D(pool_size=2, strides=2))
-model.add(Flatten())
-
-model.add(Dense(100, activation='relu'))
-model.add(BatchNormalization())
-model.add(Dense(10, activation='relu'))
-model.add(BatchNormalization())
-model.add(Dense(1, activation='sigmoid'))
-model.compile(optimizer=Adam(learning_rate=0.01), loss=BinaryCrossentropy(), metrics=['acc'])
-model.load_weights('./modelSaves/model.ckpt')
+model = tf.keras.models.load_model('./modelSaves/model.ckpt')
 
 dataset = dataset[0]
 junk = (dataset.take(int((TRAIN_RATIO+VAL_RATIO)*len(dataset))))
