@@ -32,12 +32,8 @@ junk = (dataset.take(int((TRAIN_RATIO+VAL_RATIO)*len(dataset))))
 test_dataset = (dataset.skip(int((TRAIN_RATIO+VAL_RATIO)*len(dataset))))
 test_dataset = test_dataset.map(resize_rescale)
 
-test_dataset = test_dataset.batch(1)
-model.evaluate(test_dataset)
-
-
     
-for i, (image, label) in enumerate(test_dataset.take(9)):
+for i, (image, label) in enumerate(test_dataset.batch(1).take(9)):
     ax = plt.subplot(3, 3, i+1)
     plt.imshow(image[0])
     plt.title(str(parasite_or_not(label.numpy()[0])) + " : " + str(parasite_or_not(model.predict(image)[0][0])))

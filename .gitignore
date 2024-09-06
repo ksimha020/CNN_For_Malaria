@@ -1,3 +1,4 @@
 learningVenv/
 .gitignore
 malariaDetect.ipynb
+test.py
