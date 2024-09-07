@@ -46,6 +46,7 @@ class DenseNetwork(tf.keras.layers.Layer):
         self.lastDense = tf.keras.layers.Dense(denseList[-1], activation=activation[-1])
 
     def call(self, x, training=False):
+        x = tf.keras.layers.Dropout(rate=0.2)(x)
         for denseNet, batches in zip(self.network, self.batches):
             x = denseNet(x)
             x = batches(x)
@@ -78,7 +79,16 @@ dataset, dataset_info = tfds.load('malaria', with_info=True,
 IM_SIZE = 224
 @tf.function
 def resize_rescale(image, label):
+    image = tf.cast(image, tf.float32)
     return tf.image.resize(image, (IM_SIZE, IM_SIZE)) / 255.0, label
+
+def augment_image(image, label):
+    image, label = resize_rescale(image, label)
+    image = tf.keras.layers.RandomRotation(factor=(0.25, 0.2501))(image)
+    image = tf.keras.layers.RandomFlip(mode='horizontal')(image)
+    image = tf.keras.layers.RandomContrast(factor=0.1)(image)
+    
+    return image,label
 
 def splits(dataset, TRAIN_RATIO, VAL_RATIO):
     DATASET_SIZE = len(dataset)
@@ -95,17 +105,16 @@ VAL_RATIO = 0.2
 
 train_dataset, val_dataset, test_dataset = splits(dataset[0], TRAIN_RATIO, VAL_RATIO)
 
-train_dataset = train_dataset.map(resize_rescale)
-val_dataset = val_dataset.map(resize_rescale)
+train_dataset = train_dataset.map(augment_image)
+val_dataset = val_dataset.map(augment_image)
 test_dataset = test_dataset.map(resize_rescale)
 
 train_dataset = train_dataset.shuffle(buffer_size=8, reshuffle_each_iteration=True).batch(32).prefetch(tf.data.AUTOTUNE)
 val_dataset = val_dataset.shuffle(buffer_size=8, reshuffle_each_iteration=True).batch(32).prefetch(tf.data.AUTOTUNE)
 
-callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='modelSaves/model.ckpt', 
-                                                 save_weights_only=False,
-                                                 save_best_only=True, 
-                                                 verbose=1)]
+callbacks = [tf.keras.callbacks.ModelCheckpoint(filepath='modelSaves/model.ckpt', save_weights_only=False,save_best_only=True, verbose=1),
+             tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3, verbose=1)]
+
 
 filterList = [8, 16]
 kernelSize = [3, 3]
